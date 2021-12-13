@@ -8,7 +8,71 @@ Ideally no downtime/downtime of a millisecond(CNAME change)
 ### Overview
 In this approach we do set up replication between two SQL Server instances - the primary(publisher) & secondary(subscriber) to perform datatype change.
 
-This approach was broken into 4 phases
+<details open><summary> Checklist </summary>
+
+- Publisher and Subscriber services must be running on same service account
+    - SQL Server Agent
+    - SQL Server instance
+    - SQL Server Browser
+- A shared location i.e. network location is required(Database backup will be copied here)
+    - Assign Read/Write permission to service account on this folder.
+    - Enough storage space is available 
+- Service account must be a member of sysadmin role in SQL Server
+- Xp_cmdshell must be enabled on Publisher as well as Subscriber
+- Xp_cmdshell must have read/write access to shared location
+- Ensure there is no distribution database on Publisher
+- Powershell is available on the machine from where implementation steps will be executed
+- Change execution policy of Powershell to “RemoteSigned” by starting powershell in admin mode. To change execution policy run a command “Set-ExecutionPolicy RemoteSigned”. To view current execution policy, run a command “Get-ExecutionPolicy”  
+- A shared location i.e. network location is required for bcp between publisher and subscriber
+a.	Assign Read/Write permission to service account on this folder.
+- Service account of publisher SQL Server on which SQL Server service is running must have read/write permissions to network folder used in step 1.
+
+- Replicate all the logins of publisher on Subscriber
+    ```
+    SELECT dp.type_desc, dp.SID, dp.name AS user_name
+    FROM sys.database_principals AS dp  
+    LEFT JOIN sys.server_principals AS sp  
+        ON dp.SID = sp.SID  
+    WHERE sp.SID IS NULL  
+    ```
+
+</details>
+
+<details open><summary> Pre steps </summary>
+
+> Files to modify before deployment
+
+1. Modify [Execute_all_steps.ps1](Execute_all_steps.ps1)
+    - DO NOT DELETE ANY VARIABLE FROM THE SCRIPT.
+    - When setting password in distribution_password variable, please ensure password is in compliance with windows password policy.
+  
+    ![Image not available](assets/Execute_all_steps-01.png)
+
+2. [01_SQL_job_for_stats_collection_On_Publisher.sql](1_Setup%20replication/01_SQL_job_for_stats_collection_On_Publisher.sql) and replace @login_name variable value to a valid login account under which SQL job can run independently
+![Image not available](assets/01_SQL_job_for_stats_collection_On_Publisher-01.png)
+
+3. [02_SQL_job_for_stats_collection_On_Subscriber.sql](1_Setup%20replication/02_SQL_job_for_stats_collection_On_Subscriber.sql) and replace @login_name variable value to a valid login account under which SQL job can run independently
+![Image not available](assets/02_SQL_job_for_stats_collection_On_Subscriber-01.png)
+
+4. [35_Publisher_Backup.sql](1_Setup%20replication/35_Publisher_Backup.sql)
+![Image not available](assets/35_Publisher_Backup-01.png)
+
+5. [40_Restore_published_database_to_subscriber.sql](1_Setup%20replication/40_Restore_published_database_to_subscriber.sql)
+![Image not available](assets/40_Restore_published_database_to_subscriber-01.png)
+
+6. Change login in the file [50_NewSubscription.sql](1_Setup%20replication/50_NewSubscription.sql)
+![Image not available](assets/50_NewSubscription-01.png)
+
+
+7. [65_Reseed_Identity_on_publisher_ExpUser.sql](3_Switch%20server/65_Reseed_Identity_on_publisher.sql)
+   ![Image not available](assets/65_Reseed_Identity_on_publisher-01.png)
+
+8. [66_Reseed_Identity_on_subscriber_ExpUser.sql](3_Switch%20server/66_Reseed_Identity_on_subscriber.sql)
+   ![Image not available](assets/66_Reseed_Identity_on_subscriber-01.png)
+
+Right click on “Execute_all_steps.ps1” and select “Run with Powershell” 
+
+</details>
 
 <details open><summary> 1. Setup Replication </summary>
 <p>
@@ -79,7 +143,7 @@ At this point, our 1st phase of overall datatype change has been completed. All 
 
 </details>
 
-### Powershell script to run this migration
+<details open><summary>5. Powershell scripts used to run this migration</summary>
 
 1. [Generate_Sql_script.sql](Generate_Sql_script.ps1) - This script is used to generate SQL script for creating articles for replication. This file requires an input file containing table names for which article script needs to be generated.
    
@@ -88,3 +152,14 @@ At this point, our 1st phase of overall datatype change has been completed. All 
 3. [Rollback.ps1](Rollback.ps1) - Not yet completed
    
 4. [AWS_New_Instance_Configure.ps1](AWS_New_Instance_Configure.ps1) - This script was used to add an EC2 instance to a domain.
+   </details>
+
+<details open><summary>Monitoring replication monitor</summary>
+<p>
+
+Open replication monitor to track status of replication log i.e. delay in replicating the data from publisher to subscriber.
+
+![Image not available](assets/launch_replication_monitor.png)
+![Image not available](assets/log_reader_agent.png)
+</p>
+</details>
