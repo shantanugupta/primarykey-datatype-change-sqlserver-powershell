@@ -63,7 +63,7 @@ At this point, our 1st phase of overall datatype change has been completed. All 
 3. [70_Enable_cdc_on_subscriber.sql](3_Switch%20server/70_Enable_cdc_on_subscriber.sql) - This step is only required if the Rollback strategy has to be planned. This approach is not as reliable as the above and should be used cautiously. In this approach, we are going to enable CDC on subscriber and post cutover any records changed will be logged into CDC tables. At the time of rollback, the same data will be exported using BCP and will be played back on the publisher server after stopping replication
 </details>
 
-<details><summary open> 4. Rollback </summary>
+<details open><summary> 4. Rollback </summary>
 
 1. [72_Drop_SQL_job_for_stats_collection_On_Publisher.sql](4_Rollback/72_Drop_SQL_job_for_stats_collection_On_Publisher.sql) - Drop SQL job created in [01_SQL_job_for_stats_collection_On_Publisher.sql](1_Setup%20replication/01_SQL_job_for_stats_collection_On_Publisher.sql)
    
@@ -81,7 +81,10 @@ At this point, our 1st phase of overall datatype change has been completed. All 
 
 ### Powershell script to run this migration
 
-1. (Generate_Sql_script.ps1) - This script is used to generate SQL script for creating articles for replication. This file requires an input file containing table names for which article script needs to be generated.
-2. (Execute_all_steps.ps1) -  This script passes all the parameters as command-line arguments while calling SQL scripts from sqlcmd. All server names, database names etc need to be set in this file.
-3. (Rollback.ps1) - Not yet completed
-4. (AWS_New_Instance_Configure.ps1) - This script was used to add an EC2 instance to a domain.
+1. [Generate_Sql_script.sql](Generate_Sql_script.ps1) - This script is used to generate SQL script for creating articles for replication. This file requires an input file containing table names for which article script needs to be generated.
+   
+2. [Execute_all_steps.ps1](Execute_all_steps.ps1) -  This script passes all the parameters as command-line arguments while calling SQL scripts from sqlcmd. All server names, database names etc need to be set in this file.
+   
+3. [Rollback.ps1](Rollback.ps1) - Not yet completed
+   
+4. [AWS_New_Instance_Configure.ps1](AWS_New_Instance_Configure.ps1) - This script was used to add an EC2 instance to a domain.
