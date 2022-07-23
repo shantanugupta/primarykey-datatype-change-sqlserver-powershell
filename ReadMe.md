@@ -1,4 +1,4 @@
-## Change data type change of Primary key column in SQL Server
+## Change data type of Primary key column in SQL Server
 
 I used this approach to migrate our business-critical database from SQL Server 2008 to SQL Server 2016 while changing the data type of primary key column having deep penetration in the database itself. 
 
